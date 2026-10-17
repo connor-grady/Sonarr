@@ -16,7 +16,6 @@ interface EpisodeSearchCellProps {
   episodeEntity: EpisodeEntity;
   seriesId: number;
   episodeTitle: string;
-  showOpenSeriesButton: boolean;
 }
 
 function EpisodeSearchCell({
@@ -24,7 +23,6 @@ function EpisodeSearchCell({
   episodeEntity,
   seriesId,
   episodeTitle,
-  showOpenSeriesButton,
 }: EpisodeSearchCellProps) {
   const isSearching = useCommandExecuting(CommandNames.EpisodeSearch, {
     episodeIds: [episodeId],
@@ -66,7 +64,6 @@ function EpisodeSearchCell({
         episodeTitle={episodeTitle}
         selectedTab="search"
         startInteractiveSearch={true}
-        showOpenSeriesButton={showOpenSeriesButton}
         onModalClose={setDetailsModalClosed}
       />
     </TableRowCell>

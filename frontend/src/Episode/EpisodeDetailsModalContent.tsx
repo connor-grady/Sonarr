@@ -1,19 +1,24 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
+import { EpisodeQueueDetailsProvider } from 'Activity/Queue/Details/QueueDetailsProvider';
+import Label from 'Components/Label';
 import Button from 'Components/Link/Button';
+import Link from 'Components/Link/Link';
 import ModalBody from 'Components/Modal/ModalBody';
 import ModalContent from 'Components/Modal/ModalContent';
 import ModalFooter from 'Components/Modal/ModalFooter';
 import ModalHeader from 'Components/Modal/ModalHeader';
-import MonitorToggleButton from 'Components/MonitorToggleButton';
+import SpinnerIcon from 'Components/SpinnerIcon';
 import Episode from 'Episode/Episode';
 import EpisodeDetailsTab from 'Episode/EpisodeDetailsTab';
 import episodeEntities from 'Episode/episodeEntities';
+import EpisodeStatusLabel from 'Episode/EpisodeStatusLabel';
 import useEpisode, {
   EpisodeEntity,
   getQueryKey,
   useToggleEpisodesMonitored,
 } from 'Episode/useEpisode';
+import { icons, kinds, sizes } from 'Helpers/Props';
 import { useClearReleasesOnUnmount } from 'InteractiveSearch/useReleases';
 import Series from 'Series/Series';
 import { useSingleSeries } from 'Series/useSeries';
@@ -31,7 +36,6 @@ export interface EpisodeDetailsModalContentProps {
   episodeEntity: EpisodeEntity;
   seriesId: number;
   episodeTitle: string;
-  showOpenSeriesButton?: boolean;
   selectedTab?: EpisodeDetailsTab;
   startInteractiveSearch?: boolean;
   onTabChange(isSearch: boolean): void;
@@ -43,7 +47,6 @@ function EpisodeDetailsModalContent({
   episodeEntity = episodeEntities.EPISODES,
   seriesId,
   episodeTitle,
-  showOpenSeriesButton = false,
   startInteractiveSearch = false,
   selectedTab = 'details',
   onTabChange,
@@ -57,7 +60,10 @@ function EpisodeDetailsModalContent({
     titleSlug,
     monitored: seriesMonitored,
     seriesType,
+    runtime,
   } = useSingleSeries(seriesId) as Series;
+
+  const episode = useEpisode(episodeId, episodeEntity) as Episode;
 
   const {
     episodeFileId,
@@ -66,7 +72,7 @@ function EpisodeDetailsModalContent({
     absoluteEpisodeNumber,
     airDate,
     monitored,
-  } = useEpisode(episodeId, episodeEntity) as Episode;
+  } = episode;
 
   const { toggleEpisodesMonitored, isToggling } = useToggleEpisodesMonitored(
     getQueryKey(episodeEntity)!
@@ -83,47 +89,86 @@ function EpisodeDetailsModalContent({
     [onTabChange]
   );
 
-  const handleMonitorEpisodePress = useCallback(
-    (monitored: boolean) => {
-      toggleEpisodesMonitored({
-        episodeIds: [episodeId],
-        monitored,
-      });
-    },
-    [episodeId, toggleEpisodesMonitored]
-  );
+  const handleMonitorEpisodePress = useCallback(() => {
+    toggleEpisodesMonitored({
+      episodeIds: [episodeId],
+      monitored: !monitored,
+    });
+  }, [episodeId, monitored, toggleEpisodesMonitored]);
+
+  const canToggleMonitored = seriesMonitored || monitored;
+
+  let monitorTitle = translate('ToggleMonitoredSeriesUnmonitored');
+
+  if (canToggleMonitored) {
+    monitorTitle = monitored
+      ? translate('ToggleMonitoredToUnmonitored')
+      : translate('ToggleUnmonitoredToMonitored');
+  }
+
+  const queueEpisodeIds = useMemo(() => [episodeId], [episodeId]);
 
   const seriesLink = `/series/${titleSlug}`;
 
   return (
     <ModalContent onModalClose={onModalClose}>
       <ModalHeader className={styles.header}>
-        <div className={styles.scopeLine}>
-          <span className={styles.scope}>
-            <span className={styles.scopeSeries}>{seriesTitle}</span>
+        <div className={styles.scope}>
+          <Link
+            className={styles.scopeSeries}
+            to={seriesLink}
+            onPress={onModalClose}
+          >
+            {seriesTitle}
+          </Link>
 
-            <span className={styles.scopeEpisode}>
-              <SeasonEpisodeNumber
-                seasonNumber={seasonNumber}
-                episodeNumber={episodeNumber}
-                absoluteEpisodeNumber={absoluteEpisodeNumber}
-                airDate={airDate}
-                seriesType={seriesType}
-              />
-            </span>
+          <span className={styles.scopeSeparator}>/</span>
+
+          <span className={styles.scopeEpisode}>
+            <SeasonEpisodeNumber
+              seasonNumber={seasonNumber}
+              episodeNumber={episodeNumber}
+              absoluteEpisodeNumber={absoluteEpisodeNumber}
+              airDate={airDate}
+              seriesType={seriesType}
+            />
           </span>
         </div>
 
-        <div className={styles.titleRow}>
-          <MonitorToggleButton
-            monitored={monitored}
-            size={18}
-            isDisabled={!seriesMonitored && !monitored}
-            isSaving={isToggling}
-            onPress={handleMonitorEpisodePress}
-          />
+        <div className={styles.episodeTitle}>{episodeTitle}</div>
 
-          <span className={styles.episodeTitle}>{episodeTitle}</span>
+        <div className={styles.labels}>
+          <Link
+            className={styles.monitoredToggle}
+            title={monitorTitle}
+            aria-label={monitorTitle}
+            isDisabled={!canToggleMonitored || isToggling}
+            onPress={handleMonitorEpisodePress}
+          >
+            <Label
+              kind={monitored ? kinds.DEFAULT : kinds.DISABLED}
+              size={sizes.MEDIUM}
+              dot={false}
+              interactive={canToggleMonitored && !isToggling}
+            >
+              <SpinnerIcon
+                name={icons.MONITORED}
+                filled={monitored}
+                size={12}
+                isSpinning={isToggling}
+              />
+              {monitored ? translate('Monitored') : translate('Unmonitored')}
+            </Label>
+          </Link>
+
+          <EpisodeQueueDetailsProvider episodeIds={queueEpisodeIds}>
+            <EpisodeStatusLabel
+              episode={episode}
+              hasFile={!!episodeFileId}
+              seriesMonitored={seriesMonitored}
+              seriesRuntime={runtime}
+            />
+          </EpisodeQueueDetailsProvider>
         </div>
       </ModalHeader>
 
@@ -177,16 +222,6 @@ function EpisodeDetailsModalContent({
       </ModalBody>
 
       <ModalFooter>
-        {showOpenSeriesButton && (
-          <Button
-            className={styles.openSeriesButton}
-            to={seriesLink}
-            onPress={onModalClose}
-          >
-            {translate('OpenSeries')}
-          </Button>
-        )}
-
         <Button onPress={onModalClose}>{translate('Close')}</Button>
       </ModalFooter>
     </ModalContent>

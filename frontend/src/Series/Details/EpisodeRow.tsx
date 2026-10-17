@@ -160,7 +160,6 @@ function EpisodeRow({
                 episodeTitle={title}
                 episodeEntity="episodes"
                 finaleType={finaleType}
-                showOpenSeriesButton={false}
               />
             </TableRowCell>
           );
@@ -311,7 +310,6 @@ function EpisodeRow({
               episodeEntity="episodes"
               seriesId={seriesId}
               episodeTitle={title}
-              showOpenSeriesButton={false}
             />
           );
         }
