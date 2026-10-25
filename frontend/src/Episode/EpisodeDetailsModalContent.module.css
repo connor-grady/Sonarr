@@ -1,4 +1,5 @@
 .header {
+  padding-bottom: 6px !important;
   border-bottom: none !important;
   white-space: normal !important;
 }
@@ -42,7 +43,7 @@
   color: var(--ink);
   letter-spacing: -0.02em;
   font-weight: 700;
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1.2;
 }
 
