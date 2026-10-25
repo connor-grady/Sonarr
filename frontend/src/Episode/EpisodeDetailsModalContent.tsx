@@ -2,11 +2,9 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
 import { EpisodeQueueDetailsProvider } from 'Activity/Queue/Details/QueueDetailsProvider';
 import Label from 'Components/Label';
-import Button from 'Components/Link/Button';
 import Link from 'Components/Link/Link';
 import ModalBody from 'Components/Modal/ModalBody';
 import ModalContent from 'Components/Modal/ModalContent';
-import ModalFooter from 'Components/Modal/ModalFooter';
 import ModalHeader from 'Components/Modal/ModalHeader';
 import SpinnerIcon from 'Components/SpinnerIcon';
 import Episode from 'Episode/Episode';
@@ -220,10 +218,6 @@ function EpisodeDetailsModalContent({
           </TabPanel>
         </Tabs>
       </ModalBody>
-
-      <ModalFooter>
-        <Button onPress={onModalClose}>{translate('Close')}</Button>
-      </ModalFooter>
     </ModalContent>
   );
 }
