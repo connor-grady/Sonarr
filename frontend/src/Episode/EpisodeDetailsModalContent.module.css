@@ -75,13 +75,34 @@
   margin-top: -32px;
 }
 
+.tabBar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  border-bottom: 1px solid var(--borderColor);
+  background-color: var(--modalBackgroundColor);
+}
+
 .tabList {
   display: flex;
   gap: 24px;
 
   margin: 0;
   padding: 0;
-  border-bottom: 1px solid var(--borderColor);
+}
+
+.tabFilters {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  input {
+    height: 32px;
+  }
 }
 
 .tab {
@@ -102,4 +123,15 @@
 
 .tabContent {
   margin-top: 20px;
+}
+
+@media (--breakpointSmall) {
+  .tabBar {
+    flex-wrap: wrap;
+  }
+
+  .tabFilters {
+    flex-basis: 100%;
+    padding-bottom: 10px;
+  }
 }

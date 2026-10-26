@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
 import { EpisodeQueueDetailsProvider } from 'Activity/Queue/Details/QueueDetailsProvider';
@@ -17,7 +18,11 @@ import useEpisode, {
   useToggleEpisodesMonitored,
 } from 'Episode/useEpisode';
 import { icons, kinds, sizes } from 'Helpers/Props';
-import { useClearReleasesOnUnmount } from 'InteractiveSearch/useReleases';
+import InteractiveSearchFilters from 'InteractiveSearch/InteractiveSearchFilters';
+import {
+  hasFetchedReleases,
+  useClearReleasesOnUnmount,
+} from 'InteractiveSearch/useReleases';
 import Series from 'Series/Series';
 import { useSingleSeries } from 'Series/useSeries';
 import translate from 'Utilities/String/translate';
@@ -52,6 +57,14 @@ function EpisodeDetailsModalContent({
 }: EpisodeDetailsModalContentProps) {
   const [currentlySelectedTab, setCurrentlySelectedTab] = useState(selectedTab);
   const modalBodyRef = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState('');
+
+  const queryClient = useQueryClient();
+
+  const [isInteractiveSearchOpen, setIsInteractiveSearchOpen] = useState(
+    () =>
+      startInteractiveSearch || hasFetchedReleases(queryClient, { episodeId })
+  );
 
   const {
     title: seriesTitle,
@@ -105,6 +118,12 @@ function EpisodeDetailsModalContent({
   }
 
   const queueEpisodeIds = useMemo(() => [episodeId], [episodeId]);
+
+  const searchPayload = useMemo(() => ({ episodeId }), [episodeId]);
+
+  const handleInteractiveSearchPress = useCallback(() => {
+    setIsInteractiveSearchOpen(true);
+  }, []);
 
   const seriesLink = `/series/${titleSlug}`;
 
@@ -176,19 +195,39 @@ function EpisodeDetailsModalContent({
           selectedIndex={TABS.indexOf(currentlySelectedTab)}
           onSelect={handleTabSelect}
         >
-          <TabList className={styles.tabList}>
-            <Tab className={styles.tab} selectedClassName={styles.selectedTab}>
-              {translate('Details')}
-            </Tab>
+          <div className={styles.tabBar}>
+            <TabList className={styles.tabList}>
+              <Tab
+                className={styles.tab}
+                selectedClassName={styles.selectedTab}
+              >
+                {translate('Details')}
+              </Tab>
 
-            <Tab className={styles.tab} selectedClassName={styles.selectedTab}>
-              {translate('History')}
-            </Tab>
+              <Tab
+                className={styles.tab}
+                selectedClassName={styles.selectedTab}
+              >
+                {translate('History')}
+              </Tab>
 
-            <Tab className={styles.tab} selectedClassName={styles.selectedTab}>
-              {translate('Search')}
-            </Tab>
-          </TabList>
+              <Tab
+                className={styles.tab}
+                selectedClassName={styles.selectedTab}
+              >
+                {translate('Search')}
+              </Tab>
+            </TabList>
+
+            {currentlySelectedTab === 'search' && isInteractiveSearchOpen ? (
+              <InteractiveSearchFilters
+                className={styles.tabFilters}
+                searchPayload={searchPayload}
+                filter={filter}
+                onFilterChange={setFilter}
+              />
+            ) : null}
+          </div>
 
           <TabPanel>
             <div className={styles.tabContent}>
@@ -208,13 +247,20 @@ function EpisodeDetailsModalContent({
           </TabPanel>
 
           <TabPanel>
-            {/* Don't wrap in tabContent so we not have a top margin */}
-            <EpisodeSearch
-              episodeId={episodeId}
-              startInteractiveSearch={startInteractiveSearch}
-              scrollerRef={modalBodyRef}
-              onModalClose={onModalClose}
-            />
+            <div
+              className={
+                isInteractiveSearchOpen ? styles.tabContent : undefined
+              }
+            >
+              <EpisodeSearch
+                episodeId={episodeId}
+                isInteractiveSearchOpen={isInteractiveSearchOpen}
+                filter={filter}
+                scrollerRef={modalBodyRef}
+                onInteractiveSearchPress={handleInteractiveSearchPress}
+                onModalClose={onModalClose}
+              />
+            </div>
           </TabPanel>
         </Tabs>
       </ModalBody>
